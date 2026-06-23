@@ -1,0 +1,26 @@
+---
+# Run this one first to confirm Ansible Vault is wired correctly end to end,
+# both locally and from Semaphore, before trusting it in real playbooks.
+#
+# Local test:
+#   ansible-vault create inventory/group_vars/all/vault.yml
+#   # add: vault_test_secret: "it-worked"
+#   ansible-playbook playbooks/vault-test.yml --vault-password-file ~/.ansible/vault_pass.txt
+#
+# Semaphore test:
+#   Create a Task Template pointed at this playbook, attach the Key Store
+#   "Vault Password" credential under the template's Vault Password field,
+#   then Run. Check the output for the decrypted value.
+
+- name: Confirm Ansible Vault decryption is working
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: Show whether the vaulted variable was decrypted
+      ansible.builtin.debug:
+        msg: >-
+          {{ ('VAULT OK -- decrypted value is: ' + vault_test_secret)
+             if (vault_test_secret is defined)
+             else 'VAULT NOT WORKING -- vault_test_secret is undefined' }}

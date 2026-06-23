@@ -1,0 +1,6 @@
+---
+# Entry point if you want one template in Semaphore that runs everything.
+# Most of the time you'll point individual Task Templates at the specific
+# playbooks below instead, but this is here for convenience.
+
+- ansible.builtin.import_playbook: update-ubuntu.yml

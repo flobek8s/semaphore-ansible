@@ -1,0 +1,11 @@
+---
+collections:
+  - name: ansible.posix
+    version: ">=1.5.0"
+  - name: community.general
+    version: ">=8.0.0"
+  - name: kubernetes.core
+    version: ">=3.0.0"
+  # kubernetes.core talks to the API server via the Python `kubernetes` client
+  # library, not the kubectl binary. Make sure the image has the pip package
+  # installed too -- see semaphore-deploy/Dockerfile.

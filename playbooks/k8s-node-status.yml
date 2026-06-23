@@ -1,0 +1,24 @@
+---
+# Demonstrates managing the cluster via the kubernetes.core collection,
+# which talks to the API server directly through the Python `kubernetes`
+# client library -- this does NOT need the kubectl binary at all.
+#
+# Requires: pip package `kubernetes` + collection `kubernetes.core`
+# (both already baked into the custom Semaphore image -- see
+#  semaphore-deploy/Dockerfile)
+
+- name: Kubernetes API demo (no kubectl required)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: List nodes
+      kubernetes.core.k8s_info:
+        kind: Node
+        kubeconfig: "{{ lookup('env', 'KUBECONFIG') }}"
+      register: node_info
+
+    - name: Show node names
+      ansible.builtin.debug:
+        msg: "{{ node_info.resources | map(attribute='metadata.name') | list }}"

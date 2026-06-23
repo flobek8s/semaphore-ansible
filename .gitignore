@@ -1,0 +1,13 @@
+# Never commit decrypted vault content or local vault password files
+*.decrypted
+vault_pass.txt
+.vault_pass*
+
+# Local Ansible artifacts
+*.retry
+.ansible/
+collections/ansible_collections/
+
+# Editor/OS noise
+.DS_Store
+*.swp
