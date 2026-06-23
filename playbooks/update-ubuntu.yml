@@ -2,6 +2,7 @@
 - name: Update and upgrade Ubuntu hosts
   hosts: ubuntu_servers
   become: true
+  become_method: sudo
   gather_facts: true
 
   # group_vars/all/vault.yml loads automatically -- no vars_files needed.
