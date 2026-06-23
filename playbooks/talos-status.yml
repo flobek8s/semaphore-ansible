@@ -13,7 +13,7 @@
   tasks:
     - name: Get Talos node version info
       ansible.builtin.command:
-        cmd: talosctl version --short
+        cmd: talosctl --talosconfig /etc/semaphore/secrets/talosconfig version --short
       register: talos_version
       changed_when: false
 
