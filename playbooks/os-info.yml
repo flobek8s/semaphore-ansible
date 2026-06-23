@@ -1,6 +1,6 @@
 ---
 - name: Gather OS information
-  hosts: all_servers
+  hosts: ubuntu_servers
   become: true
   become_method: sudo
   gather_facts: true
