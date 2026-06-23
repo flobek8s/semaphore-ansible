@@ -173,8 +173,7 @@
           --------------------------------------------------
           Next steps:
           1. Static IP - MAC: {{ vm_mac }}
-          2. Add static IP mapping for MAC: {{ vm_mac }}
-          3. SSH Keys
-          4. Run base provisioning:
-          5. Add to Vault and Inventory
+          2. SSH Keys
+          3. Run base provisioning after starting the VM
+          4. Add to Vault and Inventory
           --------------------------------------------------
