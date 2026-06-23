@@ -1,9 +1,4 @@
 ---
-# talosctl has no Python SDK/Ansible collection with real coverage, so this
-# shells out to the actual binary baked into the custom Semaphore image.
-# Requires TALOSCONFIG to be set (it is, via the Deployment's env vars --
-# see semaphore-deploy/apps/semaphore/values.yaml).
-
 - name: Talos cluster health check
   hosts: localhost
   connection: local

@@ -1,12 +1,4 @@
 ---
-# Demonstrates managing the cluster via the kubernetes.core collection,
-# which talks to the API server directly through the Python `kubernetes`
-# client library -- this does NOT need the kubectl binary at all.
-#
-# Requires: pip package `kubernetes` + collection `kubernetes.core`
-# (both already baked into the custom Semaphore image -- see
-#  semaphore-deploy/Dockerfile)
-
 - name: Kubernetes API demo (no kubectl required)
   hosts: localhost
   connection: local

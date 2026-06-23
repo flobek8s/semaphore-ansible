@@ -4,10 +4,6 @@
   become: true
   gather_facts: true
 
-  # group_vars/all/vault.yml loads automatically -- no vars_files needed.
-  # If a value below is wrapped in a vault_* var that doesn't exist yet,
-  # the task simply won't use it; nothing breaks until you reference it.
-
   tasks:
     - name: Update apt cache
       ansible.builtin.apt:
@@ -39,9 +35,3 @@
         msg: >-
           Updates applied on {{ inventory_hostname }}.
           Reboot was {{ 'required and performed' if reboot_required_file.stat.exists else 'not required' }}.
-
-  # NOTE on become + sudo-rs:
-  # If this host is one of the ones where sudo-rs changed how Ansible's
-  # become mechanism behaves, make sure ansible_become_method /
-  # ansible_become_flags are set appropriately for that host in inventory
-  # before relying on this playbook unattended via Semaphore's scheduler.
