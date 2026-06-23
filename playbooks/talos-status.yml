@@ -9,6 +9,7 @@
   connection: local
   gather_facts: false
   become: false
+  check_mode: false
 
   tasks:
     - name: Get Talos node version info
