@@ -1,0 +1,49 @@
+---
+- name: System Status Report
+  hosts: ubuntu_servers
+  become: false
+  gather_facts: true
+
+  tasks:
+
+    - name: Get uptime
+      shell: uptime -p
+      register: uptime_output
+      changed_when: false
+
+    - name: Get disk usage on /
+      shell: df -h / | awk 'NR==2 {print $3 " used of " $2 " (" $5 " full)"}'
+      register: disk_output
+      changed_when: false
+
+    - name: Get memory usage
+      shell: free -h | awk 'NR==2 {print $3 " used of " $2 " total"}'
+      register: memory_output
+      changed_when: false
+
+    - name: Get load average
+      shell: cat /proc/loadavg | awk '{print $1 " (1m) " $2 " (5m) " $3 " (15m)"}'
+      register: load_output
+      changed_when: false
+
+    - name: Check if reboot required
+      stat:
+        path: /var/run/reboot-required
+      register: reboot_required
+
+    - name: Display status report per host
+      debug:
+        msg: "{{ status_report.split('\n') }}"
+      vars:
+        status_report: |
+          --------------------------------------------------
+          Host    : {{ inventory_hostname }} ({{ ansible_host }})
+          --------------------------------------------------
+          OS      : {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}
+          Kernel  : {{ ansible_facts['kernel'] }}
+          Uptime  : {{ uptime_output.stdout }}
+          CPU     : {{ ansible_facts['processor_vcpus'] }} vCPUs | Load: {{ load_output.stdout }}
+          Memory  : {{ memory_output.stdout }}
+          Disk /  : {{ disk_output.stdout }}
+          Reboot  : {{ 'REQUIRED ***' if reboot_required.stat.exists else 'Not required' }}
+          --------------------------------------------------
