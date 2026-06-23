@@ -8,6 +8,7 @@
   hosts: localhost
   connection: local
   gather_facts: false
+  become: false
 
   tasks:
     - name: Get Talos node version info
