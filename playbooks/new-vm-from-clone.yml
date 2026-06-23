@@ -1,0 +1,180 @@
+---
+- name: Provision new VM from template on Proxmox
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+
+  vars_prompt:
+    - name: vm_name
+      prompt: "VM hostname"
+      private: false
+
+    - name: vm_id
+      prompt: "New VM ID (e.g. 200)"
+      private: false
+
+    - name: pve_target
+      prompt: "Proxmox server (pve, black, blue, silver, mini1, mini2, mini3)"
+      private: false
+
+    - name: template_choice
+      prompt: "Template to clone (ubuntu2404(9000), ubuntu2604(9001))"
+      default: "ubuntu2604"
+      private: false
+
+    - name: vm_cores
+      prompt: "Number of CPU cores"
+      default: "2"
+      private: false
+
+    - name: vm_memory
+      prompt: "RAM in MB (2048=2GB, 4096=4GB)"
+      default: "2048"
+      private: false
+
+    - name: vm_disk_resize
+      prompt: "Disk size to resize to in GB (e.g. 32, leave blank to keep template size)"
+      default: ""
+      private: false
+
+    - name: vm_storage
+      prompt: "Storage pool for clone (e.g. local-lvm, local-zfs)"
+      default: "local-lvm"
+      private: false
+
+  vars:
+    pve: "{{ vault_proxmox_servers[pve_target] }}"
+    pve_api: "https://{{ pve.api_host }}:8006/api2/json"
+    template_id: "{{ vault_proxmox_templates[template_choice] }}"
+
+  tasks:
+
+    - name: Validate Proxmox server selection
+      fail:
+        msg: "Invalid server '{{ pve_target }}'. Must be one of: {{ vault_proxmox_servers.keys() | join(', ') }}"
+      when: pve_target not in vault_proxmox_servers
+
+    - name: Validate template selection
+      fail:
+        msg: "Invalid template '{{ template_choice }}'. Must be one of: {{ vault_proxmox_templates.keys() | join(', ') }}"
+      when: template_choice not in vault_proxmox_templates
+
+    - name: Authenticate with Proxmox API
+      uri:
+        url: "{{ pve_api }}/access/ticket"
+        method: POST
+        body_format: form-urlencoded
+        body:
+          username: "{{ pve.user }}"
+          password: "{{ pve.password }}"
+        validate_certs: false
+      register: auth
+      no_log: true
+
+    - name: Set auth headers
+      set_fact:
+        pve_ticket: "{{ auth.json.data.ticket }}"
+        pve_csrf: "{{ auth.json.data.CSRFPreventionToken }}"
+
+    - name: Clone template {{ template_choice }} (ID {{ template_id }}) to new VM {{ vm_id }}
+      uri:
+        url: "{{ pve_api }}/nodes/{{ pve.node }}/qemu/{{ template_id }}/clone"
+        method: POST
+        headers:
+          Cookie: "PVEAuthCookie={{ pve_ticket }}"
+          CSRFPreventionToken: "{{ pve_csrf }}"
+        body_format: form-urlencoded
+        body:
+          newid: "{{ vm_id }}"
+          name: "{{ vm_name }}"
+          storage: "{{ vm_storage }}"
+          full: 1
+        validate_certs: false
+      register: clone_task
+
+    - name: Wait for clone to complete
+      uri:
+        url: "{{ pve_api }}/nodes/{{ pve.node }}/tasks/{{ clone_task.json.data }}/status"
+        method: GET
+        headers:
+          Cookie: "PVEAuthCookie={{ pve_ticket }}"
+          CSRFPreventionToken: "{{ pve_csrf }}"
+        validate_certs: false
+      register: task_status
+      until: task_status.json.data.status == "stopped"
+      retries: 30
+      delay: 10
+
+    - name: Check clone completed successfully
+      fail:
+        msg: "Clone task failed: {{ task_status.json.data.exitstatus }}"
+      when: task_status.json.data.exitstatus != "OK"
+
+    - name: Update VM CPU and memory
+      uri:
+        url: "{{ pve_api }}/nodes/{{ pve.node }}/qemu/{{ vm_id }}/config"
+        method: PUT
+        headers:
+          Cookie: "PVEAuthCookie={{ pve_ticket }}"
+          CSRFPreventionToken: "{{ pve_csrf }}"
+        body_format: form-urlencoded
+        body:
+          cores: "{{ vm_cores }}"
+          memory: "{{ vm_memory }}"
+        validate_certs: false
+
+    - name: Resize disk
+      uri:
+        url: "{{ pve_api }}/nodes/{{ pve.node }}/qemu/{{ vm_id }}/resize"
+        method: PUT
+        headers:
+          Cookie: "PVEAuthCookie={{ pve_ticket }}"
+          CSRFPreventionToken: "{{ pve_csrf }}"
+        body_format: form-urlencoded
+        body:
+          disk: scsi0
+          size: "{{ vm_disk_resize }}G"
+        validate_certs: false
+      when: vm_disk_resize != ""
+
+    - name: Get VM config to retrieve MAC address
+      uri:
+        url: "{{ pve_api }}/nodes/{{ pve.node }}/qemu/{{ vm_id }}/config"
+        method: GET
+        headers:
+          Cookie: "PVEAuthCookie={{ pve_ticket }}"
+          CSRFPreventionToken: "{{ pve_csrf }}"
+        validate_certs: false
+      register: vm_config
+
+    - name: Parse MAC address from net0
+      set_fact:
+        vm_mac: "{{ vm_config.json.data.net0.split(',')[0].split('=')[1] }}"
+
+    - name: Summary
+      debug:
+        msg: "{{ summary.split('\n') }}"
+      vars:
+        summary: |
+
+          --------------------------------------------------
+          VM Cloned Successfully - DO NOT START YET
+          --------------------------------------------------
+          Name     : {{ vm_name }}
+          VM ID    : {{ vm_id }}
+          Node     : {{ pve.node }} ({{ pve.api_host }})
+          Template : {{ template_choice }} (ID {{ template_id }})
+          CPU      : {{ vm_cores }} cores
+          RAM      : {{ vm_memory }}MB
+          Disk     : {{ vm_disk_resize ~ 'GB' if vm_disk_resize != '' else 'Template size' }}
+          Storage  : {{ vm_storage }}
+          MAC      : {{ vm_mac }}
+          --------------------------------------------------
+          Next steps:
+          1. Static IP - MAC: {{ vm_mac }}
+          2. Add static IP mapping for MAC: {{ vm_mac }}
+          3. SSH Keys
+          4. Run base provisioning:
+          5. Add to Vault and Inventory
+          --------------------------------------------------

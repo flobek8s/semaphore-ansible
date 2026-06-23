@@ -1,0 +1,62 @@
+---
+- name: Post-clone VM configuration
+  hosts: "{{ target }}"
+  become: true
+  become_method: sudo
+  become_exe: sudo.ws
+  gather_facts: true
+
+  tasks:
+
+    - name: Set hostname
+      hostname:
+        name: "{{ vm_hostname }}"
+
+    - name: Update /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        regexp: '^127\.0\.1\.1'
+        line: "127.0.1.1 {{ vm_hostname }}"
+
+    - name: Regenerate SSH host keys
+      shell: |
+        rm -f /etc/ssh/ssh_host_*
+        ssh-keygen -A
+      notify: Restart SSH
+
+    - name: Reset machine-id
+      shell: |
+        truncate -s 0 /etc/machine-id
+        truncate -s 0 /var/lib/dbus/machine-id
+
+    - name: Run updates
+      apt:
+        update_cache: true
+        upgrade: dist
+        autoremove: true
+
+    - name: Reboot server after provisioning
+      ansible.builtin.reboot:
+        msg: "Reboot initiated by Ansible after provisioning"
+        reboot_timeout: 600
+
+    - name: Final status
+      debug:
+        msg: "{{ summary.split('\n') }}"
+      vars:
+        summary: |
+
+          --------------------------------------------------
+          VM ready: {{ vm_hostname }}
+          OS      : {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}
+          Kernel  : {{ ansible_facts['kernel'] }}
+          --------------------------------------------------
+          Remember to add to inventory:
+          {{ vm_hostname }} ansible_host={{ target }}
+          --------------------------------------------------
+
+  handlers:
+    - name: Restart SSH
+      service:
+        name: ssh
+        state: restarted
