@@ -1,0 +1,38 @@
+---
+- name: Update and upgrade Ubuntu hosts
+  hosts: vps_servers
+  become: true
+  gather_facts: true
+  serial: 3
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: "{{ apt_cache_valid_time | default(3600) }}"
+
+    - name: Upgrade all packages (dist-upgrade)
+      ansible.builtin.apt:
+        upgrade: dist
+      register: apt_upgrade_result
+
+    - name: Remove no-longer-needed packages
+      ansible.builtin.apt:
+        autoremove: true
+
+    - name: Check whether a reboot is required
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+      register: reboot_required_file
+
+    - name: Reboot if required
+      ansible.builtin.reboot:
+        msg: "Reboot triggered by Ansible after package updates"
+        reboot_timeout: "{{ update_reboot_timeout | default(600) }}"
+      when: reboot_required_file.stat.exists
+
+    - name: Report result
+      ansible.builtin.debug:
+        msg: >-
+          Updates applied on {{ inventory_hostname }}.
+          Reboot was {{ 'required and performed' if reboot_required_file.stat.exists else 'not required' }}.
