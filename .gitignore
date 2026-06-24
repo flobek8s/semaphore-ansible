@@ -11,3 +11,6 @@ collections/ansible_collections/
 # Editor/OS noise
 .DS_Store
 *.swp
+
+semaphore_ansible_key
+semaphore_ansible_key.pub

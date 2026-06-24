@@ -1,0 +1,20 @@
+---
+- name: Kubernetes Pods
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+
+  tasks:
+    - name: List All Pods
+      kubernetes.core.k8s_info:
+        kind: Pod
+        kubeconfig: /etc/semaphore/secrets/kubeconfig
+      register: pod_list
+
+    - name: Print Pod Names and Status
+      ansible.builtin.debug:
+        msg: "Pod Name: {{ item.metadata.name }} | Status: {{ item.status.phase }}"
+      loop: "{{ pod_list.resources }}"
+      loop_control:
+        label: "{{ item.metadata.name }}"
