@@ -1,6 +1,6 @@
 ---
 update_reboot_timeout: 600
 apt_cache_valid_time: 3600
-ansible_user: "{{ ansible_user }}"
+# ansible_user: "{{ ansible_user }}"
 ansible_port: "{{ vps_port }}"
 ansible_become_password: "{{ vault_become_password_vps }}"
