@@ -1,6 +1,6 @@
 - name: Update Proxmox VE and PBS hosts
   hosts: proxmox_servers
-  become: true
+  become: false
   serial: 1          # one host at a time - standalone hosts, no cluster quorum to worry about, but still safer
   vars:
     reboot_if_required: false
