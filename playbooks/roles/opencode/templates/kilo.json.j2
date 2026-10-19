@@ -1,0 +1,47 @@
+{
+  "instructions": [
+    "{{ kilo_config_dir }}/AGENTS.md"
+  ],
+  "permission": {
+    "read": {
+      "*": "allow",
+      "*.env": "deny",
+      "*.env.*": "deny",
+      "*.env.example": "allow",
+      "**/.kube/config": "deny",
+      "**/talosconfig": "deny"
+    },
+    "bash": {
+      "*": "ask",
+
+      "git status*": "allow",
+      "git diff*": "allow",
+      "git log*": "allow",
+      "php -l *": "allow",
+
+      "kubectl get *": "allow",
+      "kubectl describe *": "allow",
+      "kubectl logs *": "allow",
+      "kubectl top *": "allow",
+      "kubectl apply *": "ask",
+      "kubectl delete *": "ask",
+      "kubectl patch *": "ask",
+      "kubectl replace *": "ask",
+      "kubectl rollout *": "ask",
+
+      "talosctl get *": "allow",
+      "talosctl health*": "allow",
+      "talosctl apply*": "ask",
+      "talosctl upgrade*": "ask",
+      "talosctl reset*": "ask",
+
+      "docker ps*": "allow",
+      "docker logs *": "allow",
+      "docker compose up*": "ask",
+      "docker compose down*": "ask",
+
+      "cat *.env*": "deny",
+      "grep *.env*": "deny"
+    }
+  }
+}

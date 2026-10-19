@@ -46,6 +46,29 @@
   loop: "{{ opencode_projects }}"
   when: opencode_seed_project_config | bool
 
+- name: Ensure Kilo Code config directory exists
+  ansible.builtin.file:
+    path: "{{ kilo_config_dir }}"
+    state: directory
+    mode: "0755"
+  when: opencode_manage_kilo_config | bool
+
+- name: Deploy Kilo AGENTS.md (Kilo's own global rules)
+  ansible.builtin.copy:
+    src: kilo-AGENTS.md
+    dest: "{{ kilo_config_dir }}/AGENTS.md"
+    mode: "0644"
+    backup: true
+  when: opencode_manage_kilo_config | bool
+
+- name: Deploy Kilo config (instructions, permissions)
+  ansible.builtin.template:
+    src: kilo.json.j2
+    dest: "{{ kilo_config_dir }}/{{ kilo_config_filename }}"
+    mode: "0644"
+    backup: true
+  when: opencode_manage_kilo_config | bool
+
 - name: Store OpenRouter API key (optional, from vault)
   ansible.builtin.copy:
     content: "export OPENROUTER_API_KEY={{ opencode_openrouter_api_key }}\n"

@@ -19,3 +19,11 @@ opencode_seed_project_config: true
 # Optional: OpenRouter key from ansible-vault. Leave empty to skip and run
 # `opencode auth login` by hand instead.
 opencode_openrouter_api_key: ""
+
+# Kilo Code gets its OWN config and rules, independent of OpenCode.
+# kilo_config_dir: directory that will hold the Kilo files below.
+# kilo_config_filename: kilo.json or kilo.jsonc. Confirm which one your Kilo
+# version reads (see the test steps), then change it here.
+opencode_manage_kilo_config: true
+kilo_config_dir: "{{ opencode_home }}/.config/kilo"
+kilo_config_filename: kilo.json
