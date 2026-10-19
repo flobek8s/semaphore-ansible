@@ -1,0 +1,21 @@
+---
+# Run the role as the user who will use OpenCode (no become needed).
+opencode_home: "{{ ansible_env.HOME }}"
+
+# Install OpenCode with the official install script. Set to false if it is
+# already installed (or you install it another way).
+opencode_install: true
+
+# Global config, managed by Ansible (overwritten on every run so VMs don't drift).
+opencode_config_dir: "{{ opencode_home }}/.config/opencode"
+opencode_manage_global_config: true
+
+# Per-project files. Seeded ONLY if they don't exist (force: false), so your
+# manual per-project edits are never overwritten.
+opencode_projects: []
+opencode_seed_project_agents_md: true
+opencode_seed_project_config: true
+
+# Optional: OpenRouter key from ansible-vault. Leave empty to skip and run
+# `opencode auth login` by hand instead.
+opencode_openrouter_api_key: ""

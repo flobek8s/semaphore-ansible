@@ -1,0 +1,63 @@
+---
+- name: Install OpenCode (official install script)
+  ansible.builtin.shell: curl -fsSL https://opencode.ai/install | bash
+  args:
+    creates: "{{ opencode_home }}/.opencode/bin/opencode"
+  when: opencode_install | bool
+
+- name: Ensure global config directory exists
+  ansible.builtin.file:
+    path: "{{ opencode_config_dir }}"
+    state: directory
+    mode: "0755"
+  when: opencode_manage_global_config | bool
+
+- name: Deploy global opencode.json (permissions, model)
+  ansible.builtin.copy:
+    src: opencode.json
+    dest: "{{ opencode_config_dir }}/opencode.json"
+    mode: "0644"
+    backup: true
+  when: opencode_manage_global_config | bool
+
+- name: Deploy global AGENTS.md (personal rules)
+  ansible.builtin.copy:
+    src: AGENTS.md
+    dest: "{{ opencode_config_dir }}/AGENTS.md"
+    mode: "0644"
+    backup: true
+  when: opencode_manage_global_config | bool
+
+- name: Seed project AGENTS.md (only if missing)
+  ansible.builtin.template:
+    src: project-AGENTS.md.j2
+    dest: "{{ item }}/AGENTS.md"
+    mode: "0644"
+    force: false
+  loop: "{{ opencode_projects }}"
+  when: opencode_seed_project_agents_md | bool
+
+- name: Seed project opencode.json (only if missing)
+  ansible.builtin.copy:
+    src: project-opencode.json
+    dest: "{{ item }}/opencode.json"
+    mode: "0644"
+    force: false
+  loop: "{{ opencode_projects }}"
+  when: opencode_seed_project_config | bool
+
+- name: Store OpenRouter API key (optional, from vault)
+  ansible.builtin.copy:
+    content: "export OPENROUTER_API_KEY={{ opencode_openrouter_api_key }}\n"
+    dest: "{{ opencode_config_dir }}/env"
+    mode: "0600"
+  no_log: true
+  when: opencode_openrouter_api_key | length > 0
+
+- name: Source the key file from ~/.bashrc (optional)
+  ansible.builtin.lineinfile:
+    path: "{{ opencode_home }}/.bashrc"
+    line: '[ -f "$HOME/.config/opencode/env" ] && . "$HOME/.config/opencode/env"'
+    create: true
+    mode: "0644"
+  when: opencode_openrouter_api_key | length > 0

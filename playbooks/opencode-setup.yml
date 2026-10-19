@@ -1,0 +1,5 @@
+---
+- name: Roll out OpenCode and base config
+  hosts: opencode_test_vm
+  roles:
+    - opencode
