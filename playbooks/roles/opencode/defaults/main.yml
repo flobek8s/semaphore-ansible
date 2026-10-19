@@ -1,6 +1,6 @@
 ---
 # Run the role as the user who will use OpenCode (no become needed).
-opencode_home: "{{ ansible_env.HOME }}"
+opencode_home: "{{ ansible_facts['env']['HOME'] }}"
 
 # Install OpenCode with the official install script. Set to false if it is
 # already installed (or you install it another way).
